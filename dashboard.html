@@ -480,6 +480,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+    // Determine API base URL for local dev vs deployed
+    const API_BASE_URL = (globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : globalThis.location.origin;
         // Global variable to store current trend data
         let currentTrendData = null;
         let kpiChartInstance = null;
@@ -572,7 +576,7 @@
                 globalThis.location.href = 'index.html';
                 return;
             }
-            fetch('http://localhost:3000/dashboard', {
+            fetch(`${API_BASE_URL}/dashboard`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             })
             .catch(() => { globalThis.location.href = 'index.html'; });
@@ -592,7 +596,7 @@
         
         async function loadLikedTopics() {
             try {
-                const response = await fetch('http://localhost:3000/api/liked-topics', {
+                const response = await fetch(`${API_BASE_URL}/api/liked-topics`, {
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
                 const data = await response.json();
@@ -633,7 +637,7 @@
         // Load Search History
         async function loadSearchHistory() {
             try {
-                const response = await fetch('http://localhost:3000/api/search-history', {
+                const response = await fetch(`${API_BASE_URL}/api/search-history`, {
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
                 const data = await response.json();
@@ -692,7 +696,7 @@
             if (!confirmed) return;
 
             try {
-                const response = await fetch(`http://localhost:3000/api/search-history/${id}`, {
+                const response = await fetch(`${API_BASE_URL}/api/search-history/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
@@ -736,7 +740,7 @@
         // Add to Liked Topics
         async function addToLiked(topic) {
             try {
-                const response = await fetch('http://localhost:3000/api/liked-topics', {
+                const response = await fetch(`${API_BASE_URL}/api/liked-topics`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -764,7 +768,7 @@
             if (!confirmed) return;
             
             try {
-                const response = await fetch(`http://localhost:3000/api/liked-topics/${encodeURIComponent(topic)}`, {
+                const response = await fetch(`${API_BASE_URL}/api/liked-topics/${encodeURIComponent(topic)}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
@@ -811,7 +815,7 @@
         // Save Search History
         async function saveSearchHistory(topic) {
             try {
-                await fetch('http://localhost:3000/api/search-history', {
+                await fetch(`${API_BASE_URL}/api/search-history`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -861,7 +865,7 @@
 
             try {
                 // Fetch real trend data from API
-                const response = await fetch('http://localhost:3000/api/trends/predict?force=true', {
+                const response = await fetch(`${API_BASE_URL}/api/trends/predict?force=true`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1429,17 +1433,6 @@
                 return;
             }
 
-            // Validate data availability for specific KPI types
-            if (kpiType === 'volume' && (!currentTrendData.historicalData || !currentTrendData.predictedData)) {
-                showToast('Volume data not available for this topic', 'warning');
-                return;
-            }
-
-            if (kpiType === 'sources' && !currentTrendData.sources) {
-                showToast('Source data not available for this topic', 'warning');
-                console.warn('Missing sources data:', currentTrendData);
-            }
-
             const modal = document.getElementById('kpiModal');
             const modalTitle = document.getElementById('kpiModalTitle');
             
@@ -1490,15 +1483,6 @@
             }
             
             let chartConfig = null;
-            
-            // Debug logging for sources
-            if (kpiType === 'sources') {
-                console.log('📊 Sources Data Debug:', {
-                    currentTrendData: currentTrendData,
-                    sources: currentTrendData?.sources,
-                    activeSourceCount: currentTrendData?.activeSourceCount
-                });
-            }
             
             switch(kpiType) {
                 case 'volume':
@@ -1672,28 +1656,17 @@
 
         function createSourcesChart() {
             const data = currentTrendData;
+            const sources = data.sources || {};
             
-            if (!data || !data.sources) {
-                console.warn('No source data available for visualization');
-                return createEmptySourcesChart();
-            }
-            
-            const sources = data.sources;
             const activeSourceNames = [];
             const sourceVolumes = [];
             const sourceColors = ['#00bcd4', '#48c774', '#ffdd57', '#ff6b9d'];
             
             for (const source of Object.values(sources)) {
-                if (source && source.source && source.volume !== undefined) {
+                if (source && source.source) {
                     activeSourceNames.push(source.source);
                     sourceVolumes.push(source.volume || 0);
                 }
-            }
-            
-            // If no valid sources found, show empty state
-            if (activeSourceNames.length === 0) {
-                console.warn('No active sources with valid data');
-                return createEmptySourcesChart();
             }
             
             return {
@@ -1717,44 +1690,9 @@
                         },
                         title: {
                             display: true,
-                            text: `Active Sources: ${activeSourceNames.length}/4`,
+                            text: `Active Sources: ${data.activeSourceCount}/4`,
                             color: '#f1f1f1',
                             font: { size: 16 }
-                        }
-                    }
-                }
-            };
-        }
-
-        // Helper function to create empty sources chart when no data is available
-        function createEmptySourcesChart() {
-            return {
-                type: 'pie',
-                data: {
-                    labels: ['No Data Available'],
-                    datasets: [{
-                        data: [1],
-                        backgroundColor: ['rgba(255, 255, 255, 0.1)'],
-                        borderWidth: 2,
-                        borderColor: '#211f42'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#f1f1f1', font: { size: 14 } },
-                            position: 'bottom'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Active Sources: 0/4',
-                            color: '#f1f1f1',
-                            font: { size: 16 }
-                        },
-                        tooltip: {
-                            enabled: false
                         }
                     }
                 }

@@ -117,6 +117,9 @@
     </div>
 
     <script type="module">
+        const API_BASE_URL = (globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : globalThis.location.origin;
         // Get token from URL
         const urlParams = new URLSearchParams(globalThis.location.search);
         const token = urlParams.get('token');
@@ -146,9 +149,9 @@
         }
 
         // Start verification when page loads (top-level await)
-        if (token) {
+    if (token) {
             try {
-                const response = await fetch(`http://localhost:3000/auth/verify-email?token=${encodeURIComponent(token)}`);
+        const response = await fetch(`${API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`);
                 const data = await response.json();
 
                 if (response.ok) {

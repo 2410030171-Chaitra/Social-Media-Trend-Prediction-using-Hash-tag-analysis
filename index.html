@@ -96,6 +96,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Determine API base URL for local dev vs deployed (Render)
+        const API_BASE_URL = (globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : globalThis.location.origin;
+
         // Manual Login
         document.getElementById('loginForm').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -114,7 +119,7 @@
                 return;
             }
             
-            fetch('http://localhost:3000/auth/login', {
+            fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
@@ -148,7 +153,7 @@
                 return;
             }
             
-            fetch('http://localhost:3000/auth/register', {
+            fetch(`${API_BASE_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: regUsername, email: regEmail, password: regPassword }),

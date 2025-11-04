@@ -179,8 +179,11 @@
 
     <script type="module">
         // Check if server is running (optional - silent on failure)
+        const API_BASE_URL = (globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : globalThis.location.origin;
         try {
-            await fetch('http://localhost:3000/dashboard', {
+            await fetch(`${API_BASE_URL}/dashboard`, {
                 headers: { Authorization: 'Bearer invalid' }
             });
             console.log('Server is running!');
