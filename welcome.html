@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendSphere - Welcome</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ts-bg-deep: #211f42;
+            --ts-bg-surface: #353560;
+            --ts-primary-accent: #00bcd4;
+            --ts-text-primary: #f1f1f1;
+            --ts-text-muted: #b0b0b0;
+        }
+        body {
+            background: linear-gradient(to bottom, #5e4a6a 0%, #3b487c 50%, var(--ts-bg-deep) 100%);
+            min-height: 100vh;
+            color: var(--ts-text-primary);
+            padding: 50px 20px;
+        }
+        .welcome-card {
+            background-color: var(--ts-bg-surface);
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .logo {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--ts-primary-accent);
+            margin-bottom: 30px;
+        }
+        .feature-list {
+            margin: 30px 0;
+        }
+        .feature-item {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: var(--ts-bg-deep);
+            border-radius: 8px;
+            border-left: 4px solid var(--ts-primary-accent);
+        }
+        .btn-custom {
+            background-color: var(--ts-primary-accent);
+            border: none;
+            color: var(--ts-bg-deep);
+            font-weight: 600;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ready { background-color: #48c774; }
+        .status-warning { background-color: #ffdd57; }
+        .status-error { background-color: #ff3860; }
+        .setup-steps {
+            background-color: var(--ts-bg-deep);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .step::before {
+            content: "→";
+            position: absolute;
+            left: 10px;
+            color: var(--ts-primary-accent);
+        }
+        a {
+            color: var(--ts-primary-accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .alert-custom {
+            background-color: rgba(0, 188, 212, 0.1);
+            border: 1px solid var(--ts-primary-accent);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-card">
+        <div class="logo">📈</div>
+        <h1>Welcome to TrendSphere</h1>
+        <p class="text-center" style="font-size: 1.2rem; color: var(--ts-text-muted);">
+            AI-Powered Hashtag Trend Prediction Platform
+        </p>
+
+        <div class="alert-custom mt-4">
+            <h5>🚀 Quick Start Guide</h5>
+            <p class="mb-1">Follow these steps to get started:</p>
+        </div>
+
+        <div class="setup-steps">
+            <h6 style="color: var(--ts-primary-accent); margin-bottom: 15px;">Initial Setup:</h6>
+            <div class="step">
+                <span class="status-indicator status-ready"></span>
+                <strong>Step 1:</strong> Run <code style="background: #000; padding: 2px 8px; border-radius: 3px;">setup.bat</code> (double-click the file)
+            </div>
+            <div class="step">
+                <span class="status-indicator status-warning"></span>
+                <strong>Step 2:</strong> Configure your <code style="background: #000; padding: 2px 8px; border-radius: 3px;">.env</code> file
+            </div>
+            <div class="step">
+                <span class="status-indicator status-ready"></span>
+                <strong>Step 3:</strong> Run <code style="background: #000; padding: 2px 8px; border-radius: 3px;">npm start</code> in terminal
+            </div>
+            <div class="step">
+                <span class="status-indicator status-ready"></span>
+                <strong>Step 4:</strong> Click the button below to start!
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <h5 style="color: var(--ts-primary-accent);">✨ Features:</h5>
+            <div class="feature-item">
+                🔐 <strong>Secure Authentication</strong> - Login with email verification
+            </div>
+            <div class="feature-item">
+                📊 <strong>24-Hour Predictions</strong> - AI-powered trend forecasting
+            </div>
+            <div class="feature-item">
+                ❤️ <strong>Liked Topics</strong> - Save and track your favorite topics
+            </div>
+            <div class="feature-item">
+                📈 <strong>Visual Analytics</strong> - Interactive charts and graphs
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="index.html" class="btn btn-custom btn-lg">
+                🚀 Launch TrendSphere
+            </a>
+        </div>
+
+        <div class="text-center mt-4">
+            <p style="color: var(--ts-text-muted); font-size: 0.9rem;">
+                📖 Read the <a href="SETUP_GUIDE.md" target="_blank">Setup Guide</a> | 
+                📋 View <a href="FEATURES.md" target="_blank">Features</a> | 
+                ❓ Check <a href="README.md" target="_blank">README</a>
+            </p>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+
+        <div class="text-center">
+            <p style="color: var(--ts-text-muted); font-size: 0.85rem; margin: 0;">
+                <strong>Important:</strong> Make sure the server is running before launching!<br>
+                Open terminal and run: <code style="background: #000; padding: 2px 8px; border-radius: 3px;">npm start</code>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Check if server is running (optional - silent on failure)
+        try {
+            await fetch('http://localhost:3000/dashboard', {
+                headers: { Authorization: 'Bearer invalid' }
+            });
+            console.log('Server is running!');
+        } catch (err) {
+            console.error('Server not running - user needs to start it', err);
+        }
+    </script>
+</body>
+</html>

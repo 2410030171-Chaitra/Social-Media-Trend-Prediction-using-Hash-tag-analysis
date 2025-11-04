@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendSphere - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* --- Color Variables for Dark Mode --- */
+        :root {
+            --ts-bg-deep: #211f42;
+            --ts-bg-surface: #353560;
+            --ts-primary-accent: #00bcd4;
+            --ts-text-primary: #f1f1f1;
+            --ts-text-muted: #b0b0b0;
+            --ts-border-subtle: rgba(255, 255, 255, 0.15);
+            --ts-confidence-band: rgba(0, 188, 212, 0.1);
+            --kpi-green-icon: #48c774;
+            --kpi-magenta-icon: #a342a3;
+            --kpi-yellow-icon: #ffdd57;
+            --trend-up-color: #48c774;
+            --trend-down-color: #ff3860;
+            --trend-neutral-color: #ffdd57;
+        }
+
+        /* --- THE GRADIENT BACKGROUND --- */
+        body {
+            background: linear-gradient(to bottom, #5e4a6a 0%, #3b487c 50%, var(--ts-bg-deep) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--ts-text-primary);
+        }
+
+        /* General Component Styles */
+        .navbar {
+            background-color: rgba(33, 31, 66, 0.7) !important;
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid var(--ts-border-subtle);
+        }
+        .card {
+            background-color: var(--ts-bg-surface) !important;
+            color: var(--ts-text-primary) !important;
+            border: 1px solid var(--ts-border-subtle) !important;
+        }
+        .card-header {
+            background-color: var(--ts-bg-deep) !important;
+            border-bottom: 1px solid var(--ts-border-subtle) !important;
+            color: var(--ts-text-primary) !important;
+        }
+        .list-group-item {
+            background-color: var(--ts-bg-surface) !important;
+            color: var(--ts-text-primary) !important;
+            border-color: var(--ts-border-subtle) !important;
+        }
+
+        /* Form Control Visibility Fixes */
+        .form-control {
+            background-color: var(--ts-bg-deep);
+            border-color: var(--ts-border-subtle);
+            color: #ffffff !important;
+        }
+        .form-control:focus {
+            background-color: var(--ts-bg-deep);
+            border-color: var(--ts-primary-accent);
+            color: #ffffff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+        }
+        input.form-control {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+        .form-control::placeholder {
+            color: var(--ts-text-muted) !important;
+            opacity: 0.7;
+        }
+        .btn-primary {
+            background-color: var(--ts-primary-accent) !important;
+            border-color: var(--ts-primary-accent) !important;
+            color: var(--ts-bg-deep) !important;
+            font-weight: 600;
+        }
+
+        /* Prediction Result Box Visibility Fixes */
+        #predictionResult {
+            border-left: 5px solid var(--ts-primary-accent);
+            padding: 15px;
+            background-color: var(--ts-bg-deep);
+            border-radius: 6px;
+            color: var(--ts-text-primary) !important;
+        }
+        #predictionResult h5, #predictionResult p, #predictionResult .lead {
+            color: var(--ts-text-primary) !important;
+        }
+        #predictionResult .text-muted {
+            color: var(--ts-text-muted) !important;
+        }
+        .hashtag-prediction-item {
+            background-color: var(--ts-bg-deep) !important;
+            border: 1px solid var(--ts-border-subtle) !important;
+            color: var(--ts-text-primary);
+        }
+        .score-label {
+            color: var(--ts-text-muted);
+        }
+        .score-value {
+            color: var(--ts-text-primary);
+        }
+
+        /* KPI Card Styling */
+        .kpi-card {
+            background-color: var(--ts-bg-surface) !important;
+            min-height: 120px;
+            border-radius: 8px;
+            padding: 20px;
+            border: none !important;
+        }
+        button.kpi-card:focus {
+            outline: 2px solid var(--ts-primary-accent);
+            outline-offset: 2px;
+        }
+        button.kpi-card:active {
+            transform: scale(0.98) !important;
+        }
+        .kpi-value { font-size: 2rem; font-weight: 700; color: var(--ts-text-primary); }
+        .kpi-label { color: var(--ts-text-muted); font-size: 0.9rem; }
+        .kpi-icon { font-size: 2.5rem; opacity: 0.9; }
+
+        /* Progress bar styling */
+        #accuracyProgressBar {
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 10px;
+            height: 8px;
+        }
+        #accuracyProgressBar::-webkit-progress-bar {
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        #accuracyProgressBar::-webkit-progress-value {
+            background: linear-gradient(90deg, #a342a3, #ff6b9d);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+        #accuracyProgressBar::-moz-progress-bar {
+            background: linear-gradient(90deg, #a342a3, #ff6b9d);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+        }
+        .toast-notification {
+            background: var(--ts-bg-surface);
+            border-left: 4px solid var(--ts-primary-accent);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            color: var(--ts-text-primary);
+        }
+        .toast-notification.success {
+            border-left-color: #4caf50;
+        }
+        .toast-notification.error {
+            border-left-color: #f44336;
+        }
+        .toast-notification.warning {
+            border-left-color: #ffdd57;
+        }
+        .toast-notification.info {
+            border-left-color: var(--ts-primary-accent);
+        }
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .toast-notification.success .toast-icon {
+            color: #4caf50;
+        }
+        .toast-notification.error .toast-icon {
+            color: #f44336;
+        }
+        .toast-notification.warning .toast-icon {
+            color: #ffdd57;
+        }
+        .toast-notification.info .toast-icon {
+            color: var(--ts-primary-accent);
+        }
+        .toast-content {
+            flex: 1;
+        }
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--ts-text-primary);
+        }
+        .toast-message {
+            font-size: 14px;
+            color: var(--ts-text-muted);
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--ts-text-muted);
+            cursor: pointer;
+            padding: 0;
+            font-size: 20px;
+            line-height: 1;
+            opacity: 0.7;
+        }
+        .toast-close:hover {
+            opacity: 1;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        .toast-notification.removing {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        
+        /* Confirmation Modal Styles */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .confirm-modal {
+            background: var(--ts-bg-surface);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.2s ease-out;
+        }
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ts-text-primary);
+        }
+        .confirm-message {
+            color: var(--ts-text-muted);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="material-icons align-middle me-1" style="color: var(--ts-primary-accent);">auto_graph</i>
+                📈 TrendSphere
+            </a>
+            <span class="navbar-text ms-auto me-3 text-light">
+                Welcome, <span id="userName">User</span>!
+            </span>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4 text-light">Trend Prediction Dashboard</h1>
+
+        <div class="row mb-5">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <button class="kpi-card shadow-lg" onclick="showKPIVisualization('volume')" aria-label="View Volume Trend Analysis" style="cursor: pointer; transition: transform 0.2s; width: 100%; text-align: left; border: none; background-color: var(--ts-bg-surface);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    <div class="kpi-label">Current Volume</div>
+                    <div class="kpi-card-content">
+                        <div>
+                            <div class="kpi-value" id="kpiVolume">--</div>
+                            <div class="kpi-change" id="kpiVolumeChange" style="color: var(--kpi-green-icon);">--</div>
+                        </div>
+                        <i class="material-icons kpi-icon" style="color: var(--ts-primary-accent);">trending_up</i>
+                    </div>
+                </button>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <button class="kpi-card shadow-lg" onclick="showKPIVisualization('trend')" aria-label="View Trend Direction Analysis" style="cursor: pointer; transition: transform 0.2s; width: 100%; text-align: left; border: none; background-color: var(--ts-bg-surface);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    <div class="kpi-label">Trend Status</div>
+                    <div class="kpi-card-content">
+                        <div>
+                            <div class="kpi-value" id="kpiTrendStatus">--</div>
+                            <div class="kpi-change" id="kpiTrendChange" style="color: var(--kpi-green-icon);">--</div>
+                        </div>
+                        <i class="material-icons kpi-icon" id="kpiTrendIcon" style="color: var(--kpi-green-icon);">show_chart</i>
+                    </div>
+                </button>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <button class="kpi-card shadow-lg" onclick="showKPIVisualization('accuracy')" aria-label="View Prediction Accuracy Analysis" style="cursor: pointer; transition: transform 0.2s; width: 100%; text-align: left; border: none; background-color: var(--ts-bg-surface);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    <div class="kpi-label">Prediction Accuracy</div>
+                    <div class="kpi-card-content">
+                        <div style="width: 100%;">
+                            <div class="kpi-value" id="kpiAccuracy">--</div>
+                            <div class="kpi-change" id="kpiAccuracyLabel" style="color: var(--ts-primary-accent); margin-bottom: 8px;">Confidence</div>
+                            <!-- Accuracy Progress Bar -->
+                            <progress id="accuracyProgressBar" max="100" value="0" aria-label="Prediction accuracy percentage" style="width: 100%; height: 8px; border-radius: 10px; margin-top: 8px;"></progress>
+                        </div>
+                        <i class="material-icons kpi-icon" style="color: var(--kpi-magenta-icon);">adjust</i>
+                    </div>
+                </button>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <button class="kpi-card shadow-lg" onclick="showKPIVisualization('sources')" aria-label="View Data Sources Breakdown" style="cursor: pointer; transition: transform 0.2s; width: 100%; text-align: left; border: none; background-color: var(--ts-bg-surface);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                    <div class="kpi-label">Data Sources</div>
+                    <div class="kpi-card-content">
+                        <div>
+                            <div class="kpi-value" id="kpiDataSources">--</div>
+                            <div class="kpi-change" id="kpiPrimarySource" style="color: var(--kpi-yellow-icon);">--</div>
+                        </div>
+                        <i class="material-icons kpi-icon" style="color: var(--kpi-yellow-icon);">hub</i>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+            <h4 class="card-title mb-3">🔍 Search a Topic for 7-Day History and 24-Hour Prediction</h4>
+            <form id="searchForm" class="input-group mb-3">
+                <input type="text" class="form-control form-control-lg" placeholder="Enter hashtag or topic (e.g., #AIArt, ClimateChange)" name="topic" id="searchInput" required style="color: #ffffff !important;">
+                <button class="btn btn-primary btn-lg" type="submit">Predict Trend</button>
+            </form>
+
+            <div id="predictionResult" class="prediction-box trend-rising mt-4" style="display: none;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5>Prediction for <strong id="predictedTopic" style="color: var(--ts-primary-accent);"></strong>:</h5>
+                    <button id="likeSearchedTopicBtn" class="btn btn-sm btn-outline-primary" onclick="likeSearchedTopic()" title="Add to Liked Topics">
+                        <i class="material-icons" style="font-size: 20px;">favorite_border</i>
+                        <span class="d-none d-sm-inline ms-1">Like</span>
+                    </button>
+                </div>
+                <p class="lead mb-1">
+                    **Status:** <span id="predictionStatus" class="badge bg-success"></span>
+                    <small class="text-muted">(Confidence: <span id="predictionConfidence"></span>%)</small>
+                </p>
+                <p id="predictionMessage"></p>
+
+                <hr style="color: var(--ts-border-subtle);">
+
+                <h5 class="text-light">Topic Volume: Last 7 Days (Historical) + Next 24 Hours (Predicted)</h5>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <div id="searchedTopicPrediction" class="d-flex flex-column mt-4"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header" style="color: var(--ts-primary-accent);">
+                        <i class="material-icons align-middle me-1">trending_up</i> Global Trending Topics Now
+                    </div>
+                    <ul class="list-group list-group-flush" id="globalTrendingList">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            #SpaceExploration <span class="badge bg-success rounded-pill">+120%</span>
+                            <button class="btn btn-sm btn-outline-warning ms-2" title="Add to Liked List" onclick="addToLiked('#SpaceExploration')"><i class="material-icons">favorite_border</i></button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            #NewMovieTitle <span class="badge bg-warning rounded-pill">Stable</span>
+                            <button class="btn btn-sm btn-outline-warning ms-2" title="Add to Liked List" onclick="addToLiked('#NewMovieTitle')"><i class="material-icons">favorite_border</i></button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            #OldTrend <span class="badge bg-danger rounded-pill">-35%</span>
+                            <button class="btn btn-sm btn-outline-warning ms-2" title="Add to Liked List" onclick="addToLiked('#OldTrend')"><i class="material-icons">favorite_border</i></button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header" style="color: var(--kpi-magenta-icon);">
+                        <i class="material-icons align-middle me-1">favorite</i> My Liked Topics
+                    </div>
+                    <ul class="list-group list-group-flush" id="likedTopicsList">
+                        <li class="list-group-item text-center text-muted">Loading...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search History Section -->
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="card">
+                    <div class="card-header" style="color: var(--ts-primary-accent);">
+                        <i class="material-icons align-middle me-1">history</i> Recent Search History
+                    </div>
+                    <ul class="list-group list-group-flush" id="searchHistoryList">
+                        <li class="list-group-item text-center text-muted">Loading...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Visualization Modal -->
+    <div id="kpiModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="background-color: var(--ts-bg-surface); margin: 5% auto; padding: 30px; border-radius: 12px; width: 80%; max-width: 900px; border: 1px solid var(--ts-border-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="kpiModalTitle" style="color: var(--ts-text-primary); margin: 0;">KPI Analysis</h3>
+                <button onclick="closeKPIModal()" aria-label="Close modal" style="background: none; border: none; color: var(--ts-text-muted); font-size: 28px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="height: 400px; position: relative;">
+                <canvas id="kpiChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variable to store current trend data
+        let currentTrendData = null;
+        let kpiChartInstance = null;
+
+        // Toast Notification System
+        function showToast(message, type = 'info', title = '') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            
+            const icons = {
+                success: 'check_circle',
+                error: 'error',
+                warning: 'warning',
+                info: 'info'
+            };
+            
+            const titles = {
+                success: title || 'Success',
+                error: title || 'Error',
+                warning: title || 'Warning',
+                info: title || 'Info'
+            };
+            
+            toast.innerHTML = `
+                <i class="material-icons toast-icon">${icons[type]}</i>
+                <div class="toast-content">
+                    <div class="toast-title">${titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="closeToast(this.parentElement)">×</button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                closeToast(toast);
+            }, 4000);
+        }
+        
+        function closeToast(toast) {
+            toast.classList.add('removing');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+        
+        // Confirmation Dialog System
+        function showConfirm(message, title = 'Confirm Action') {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.className = 'confirm-overlay';
+                overlay.innerHTML = `
+                    <div class="confirm-modal">
+                        <div class="confirm-title">${title}</div>
+                        <div class="confirm-message">${message}</div>
+                        <div class="confirm-buttons">
+                            <button class="btn btn-secondary" onclick="closeConfirm(this, false)">Cancel</button>
+                            <button class="btn btn-primary" onclick="closeConfirm(this, true)">OK</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                
+                globalThis.confirmResolve = resolve;
+            });
+        }
+        
+        function closeConfirm(button, result) {
+            const overlay = button.closest('.confirm-overlay');
+            overlay.style.animation = 'fadeOut 0.2s ease-in';
+            setTimeout(() => {
+                overlay.remove();
+                if (globalThis.confirmResolve) {
+                    globalThis.confirmResolve(result);
+                    globalThis.confirmResolve = null;
+                }
+            }, 200);
+        }
+        
+        // Get Token
+        const getToken = () => localStorage.getItem('userToken');
+
+        // Token Check and User Display
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = getToken();
+            if (!token) {
+                globalThis.location.href = 'index.html';
+                return;
+            }
+            fetch('http://localhost:3000/dashboard', {
+                headers: { 'Authorization': `Bearer ${token}` },
+            })
+            .catch(() => { globalThis.location.href = 'index.html'; });
+
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('userName').textContent = user.username || 'User';
+            }
+
+            // Load liked topics and search history
+            loadLikedTopics();
+            loadSearchHistory();
+        });
+
+        // Load Liked Topics
+        let likedTopicsCache = [];
+        
+        async function loadLikedTopics() {
+            try {
+                const response = await fetch('http://localhost:3000/api/liked-topics', {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data = await response.json();
+                
+                const listContainer = document.getElementById('likedTopicsList');
+                listContainer.innerHTML = '';
+                
+                if (data.success && data.likedTopics && data.likedTopics.length > 0) {
+                    likedTopicsCache = data.likedTopics; // Cache the liked topics
+                    
+                    for (const topic of data.likedTopics) {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `
+                            <span>${topic}</span>
+                            <div>
+                                <button class="btn btn-sm btn-outline-info ms-2" title="Check Prediction" onclick="searchTopic('${topic}')">
+                                    <i class="material-icons">search</i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger ms-2" title="Remove" onclick="removeFromLiked('${topic}')">
+                                    <i class="material-icons">delete</i>
+                                </button>
+                            </div>
+                        `;
+                        listContainer.appendChild(li);
+                    }
+                } else {
+                    listContainer.innerHTML = '<li class="list-group-item text-center text-muted">No liked topics yet. Add some from trending topics!</li>';
+                    likedTopicsCache = [];
+                }
+            } catch (error) {
+                console.error('Error loading liked topics:', error);
+                document.getElementById('likedTopicsList').innerHTML = '<li class="list-group-item text-center text-danger">Error loading liked topics</li>';
+                likedTopicsCache = [];
+            }
+        }
+
+        // Load Search History
+        async function loadSearchHistory() {
+            try {
+                const response = await fetch('http://localhost:3000/api/search-history', {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data = await response.json();
+                
+                const listContainer = document.getElementById('searchHistoryList');
+                listContainer.innerHTML = '';
+                
+                if (data.success && data.history && data.history.length > 0) {
+                    for (const item of data.history) {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        
+                        const searchDate = new Date(item.searchedAt);
+                        const formattedDate = searchDate.toLocaleDateString() + ' ' + searchDate.toLocaleTimeString();
+                        
+                        const topicDiv = document.createElement('div');
+                        topicDiv.innerHTML = `
+                            <strong>${item.topic}</strong>
+                            <br>
+                            <small class="text-muted">${formattedDate}</small>
+                        `;
+                        
+                        const buttonsDiv = document.createElement('div');
+                        
+                        const searchBtn = document.createElement('button');
+                        searchBtn.className = 'btn btn-sm btn-outline-info ms-2';
+                        searchBtn.title = 'Search Again';
+                        searchBtn.innerHTML = '<i class="material-icons">search</i>';
+                        searchBtn.addEventListener('click', () => searchTopic(item.topic));
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
+                        deleteBtn.title = 'Delete from History';
+                        deleteBtn.innerHTML = '<i class="material-icons">delete</i>';
+                        deleteBtn.addEventListener('click', () => deleteSearchHistoryItem(item._id));
+                        
+                        buttonsDiv.appendChild(searchBtn);
+                        buttonsDiv.appendChild(deleteBtn);
+                        
+                        li.appendChild(topicDiv);
+                        li.appendChild(buttonsDiv);
+                        listContainer.appendChild(li);
+                    }
+                } else {
+                    listContainer.innerHTML = '<li class="list-group-item text-center text-muted">No search history yet. Start searching for topics!</li>';
+                }
+            } catch (error) {
+                console.error('Error loading search history:', error);
+                document.getElementById('searchHistoryList').innerHTML = '<li class="list-group-item text-center text-danger">Error loading search history</li>';
+            }
+        }
+
+        // Delete Search History Item
+        async function deleteSearchHistoryItem(id) {
+            const confirmed = await showConfirm('Delete this item from your search history?', 'Delete History Item');
+            if (!confirmed) return;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/search-history/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Search history item deleted!', 'success');
+                    loadSearchHistory();
+                } else {
+                    showToast(data.message || 'Failed to delete search history item', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting search history item:', error);
+                showToast('Error deleting search history item', 'error');
+            }
+        }
+
+        // Check if topic is already liked
+        function isTopicLiked(topic) {
+            return likedTopicsCache.includes(topic);
+        }
+
+        // Update like button state based on whether topic is liked
+        function updateLikeButtonState(topic) {
+            const likeBtn = document.getElementById('likeSearchedTopicBtn');
+            const icon = likeBtn.querySelector('i');
+            
+            if (isTopicLiked(topic)) {
+                icon.textContent = 'favorite';
+                likeBtn.classList.remove('btn-outline-primary');
+                likeBtn.classList.add('btn-primary');
+                likeBtn.title = 'Already in Liked Topics';
+            } else {
+                icon.textContent = 'favorite_border';
+                likeBtn.classList.remove('btn-primary');
+                likeBtn.classList.add('btn-outline-primary');
+                likeBtn.title = 'Add to Liked Topics';
+            }
+        }
+
+        // Add to Liked Topics
+        async function addToLiked(topic) {
+            try {
+                const response = await fetch('http://localhost:3000/api/liked-topics', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ topic })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`${topic} added to your liked list!`, 'success');
+                    loadLikedTopics();
+                } else {
+                    showToast(data.message || 'Failed to add topic', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding topic:', error);
+                showToast('Error adding topic to liked list', 'error');
+            }
+        }
+
+        // Remove from Liked Topics
+        async function removeFromLiked(topic) {
+            const confirmed = await showConfirm(`Remove ${topic} from your liked list?`, 'Remove Topic');
+            if (!confirmed) return;
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/liked-topics/${encodeURIComponent(topic)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`${topic} removed from your liked list!`, 'success');
+                    loadLikedTopics();
+                } else {
+                    showToast(data.message || 'Failed to remove topic', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing topic:', error);
+                showToast('Error removing topic from liked list', 'error');
+            }
+        }
+
+        // Like the currently searched topic
+        let currentSearchedTopic = '';
+        async function likeSearchedTopic() {
+            if (!currentSearchedTopic) {
+                showToast('No topic searched yet!', 'warning');
+                return;
+            }
+            
+            // Check if already liked
+            if (isTopicLiked(currentSearchedTopic)) {
+                showToast('This topic is already in your liked list!', 'info');
+                return;
+            }
+            
+            await addToLiked(currentSearchedTopic);
+            
+            // Update button to show it's liked
+            updateLikeButtonState(currentSearchedTopic);
+        }
+
+        // Search Topic (for liked topics search button)
+        function searchTopic(topic) {
+            document.getElementById('searchInput').value = topic;
+            document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        }
+
+        // Save Search History
+        async function saveSearchHistory(topic) {
+            try {
+                await fetch('http://localhost:3000/api/search-history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ topic })
+                });
+                // Reload search history to show the new item
+                loadSearchHistory();
+            } catch (error) {
+                console.error('Error saving search history:', error);
+            }
+        }
+
+        // Logout Function
+        function logout() {
+            localStorage.clear();
+            globalThis.location.href = 'index.html';
+        }
+
+        // Number of historical hours (7 days * 24 hours)
+        const HISTORICAL_HOURS = 7 * 24;
+        const PREDICTED_HOURS = 24;
+        const TOTAL_HOURS = HISTORICAL_HOURS + PREDICTED_HOURS;
+
+        // Main Form Submission Handler
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const searchTopic = document.getElementById('searchInput').value.trim();
+            const predictionResultDiv = document.getElementById('predictionResult');
+
+            // Store the current searched topic
+            currentSearchedTopic = searchTopic;
+            
+            // Update like button state based on whether topic is already liked
+            updateLikeButtonState(searchTopic);
+
+            // Save search history
+            saveSearchHistory(searchTopic);
+
+            // Show loading state
+            predictionResultDiv.style.display = 'block';
+            document.getElementById('predictedTopic').textContent = searchTopic;
+            document.getElementById('predictionStatus').textContent = 'Loading...';
+            document.getElementById('predictionConfidence').textContent = '...';
+            document.getElementById('predictionMessage').textContent = 'Fetching real-time trend data from multiple sources...';
+
+            try {
+                // Fetch real trend data from API
+                const response = await fetch('http://localhost:3000/api/trends/predict?force=true', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ topic: searchTopic })
+                });
+
+                // Check if response is ok (status 200-299)
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                    console.error('❌ API Error Response:', response.status, errorData);
+                    throw new Error(errorData.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Debug: Log the data received
+                    console.log('📊 API Response Data:', data);
+                    console.log('📈 Historical Data Length:', data.historicalData?.length);
+                    console.log('🔮 Predicted Data Length:', data.predictedData?.length);
+                    console.log('✅ Using REAL data from API (not fallback)');
+                    
+                    // Use real data from API
+                    displayRealTrendData(data, searchTopic);
+                } else {
+                    console.error('❌ API returned success: false -', data.message);
+                    throw new Error(data.message || 'Failed to fetch trend data');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching trends:', error);
+                showToast('Error fetching trend data. Using fallback data.', 'warning');
+                
+                // Fallback to dummy data if API fails
+                const trendData = generateDummyTrendData();
+                const prediction = simulatePrediction(searchTopic, trendData);
+                displayDummyTrendData(searchTopic, trendData, prediction);
+            }
+        });
+
+        // Function to update KPI cards with real data
+        function getTrendColor(trend) {
+            if (trend === 'rising') {
+                return 'var(--kpi-green-icon)';
+            } else if (trend === 'falling') {
+                return 'var(--trend-down-color)';
+            } else {
+                return 'var(--ts-primary-accent)';
+            }
+        }
+
+        function getTrendStatus(trend) {
+            if (trend === 'rising') {
+                return '↗️ Rising';
+            } else if (trend === 'falling') {
+                return '↘️ Falling';
+            } else {
+                return '➡️ Stable';
+            }
+        }
+
+        function getTrendIconName(trend) {
+            if (trend === 'rising') {
+                return 'trending_up';
+            } else if (trend === 'falling') {
+                return 'trending_down';
+            } else {
+                return 'show_chart';
+            }
+        }
+
+        function getTrendIconColor(trend) {
+            if (trend === 'rising') {
+                return 'var(--kpi-green-icon)';
+            } else if (trend === 'falling') {
+                return 'var(--trend-down-color)';
+            } else {
+                return 'var(--kpi-yellow-icon)';
+            }
+        }
+
+        function getConfidenceLabel(confidence) {
+            if (confidence >= 70) {
+                return 'High Confidence';
+            } else if (confidence >= 50) {
+                return 'Medium Confidence';
+            } else {
+                return 'Low Confidence';
+            }
+        }
+
+        function updateKPICards(data) {
+            // KPI 1: Current Volume
+            document.getElementById('kpiVolume').textContent = Math.round(data.currentVolume).toLocaleString();
+            document.getElementById('kpiVolumeChange').textContent = `${data.trendPercentage}%`;
+            document.getElementById('kpiVolumeChange').style.color = getTrendColor(data.trend);
+            
+            // KPI 2: Trend Status
+            document.getElementById('kpiTrendStatus').textContent = getTrendStatus(data.trend);
+            document.getElementById('kpiTrendChange').textContent = `${data.trendPercentage}%`;
+            document.getElementById('kpiTrendChange').style.color = getTrendColor(data.trend);
+            
+            // Update trend icon
+            const trendIcon = document.getElementById('kpiTrendIcon');
+            trendIcon.textContent = getTrendIconName(data.trend);
+            trendIcon.style.color = getTrendIconColor(data.trend);
+            
+            // KPI 3: Prediction Accuracy
+            document.getElementById('kpiAccuracy').textContent = `${data.confidence}%`;
+            document.getElementById('kpiAccuracyLabel').textContent = getConfidenceLabel(data.confidence);
+            
+            // Animate accuracy progress bar
+            const progressBar = document.getElementById('accuracyProgressBar');
+            if (progressBar) {
+                setTimeout(() => {
+                    progressBar.value = data.confidence;
+                    progressBar.setAttribute('aria-label', `Prediction accuracy: ${data.confidence}%`);
+                    
+                    // Change color based on confidence level using CSS filter
+                    if (data.confidence >= 80) {
+                        progressBar.style.accentColor = '#48c774'; // Green
+                    } else if (data.confidence >= 60) {
+                        progressBar.style.accentColor = '#ffdd57'; // Yellow
+                    } else {
+                        progressBar.style.accentColor = '#ff6b9d'; // Pink
+                    }
+                }, 100);
+            }
+            
+            // KPI 4: Data Sources
+            try {
+                const maxSources = Object.keys(data.sources || {}).length || 3;
+                document.getElementById('kpiDataSources').textContent = `${data.activeSourceCount}/${maxSources}`;
+            } catch (e) {
+                console.error('Error updating data sources KPI:', e);
+                document.getElementById('kpiDataSources').textContent = `${data.activeSourceCount}/3`;
+            }
+            document.getElementById('kpiPrimarySource').textContent = data.primarySource || 'Multiple';
+        }
+
+        // Display Real Trend Data from API
+        async function displayRealTrendData(data, searchTopic) {
+            // Store data globally for KPI visualizations
+            currentTrendData = data;
+            
+            const predictionResultDiv = document.getElementById('predictionResult');
+            
+            // Determine trend status
+            let status = 'STABLE';
+            let statusClass = 'bg-secondary';
+            const trendPct = Number.parseFloat(data.trendPercentage);
+            
+            if (data.trend === 'rising' && trendPct > 20) {
+                status = 'VIRAL SPIKE';
+                statusClass = 'bg-success';
+            } else if (data.trend === 'rising') {
+                status = 'RISING';
+                statusClass = 'bg-success';
+            } else if (data.trend === 'falling') {
+                status = 'FALLING';
+                statusClass = 'bg-danger';
+            }
+
+            // Update UI
+            document.getElementById('predictedTopic').textContent = searchTopic;
+            document.getElementById('predictionStatus').textContent = status;
+            document.getElementById('predictionStatus').className = `badge ${statusClass}`;
+            document.getElementById('predictionConfidence').textContent = data.confidence;
+            
+            // Update KPI Cards with real data
+            updateKPICards(data);
+            
+            // Generate message
+            const sources = Object.values(data.sources).filter(s => s !== null).map(s => s.source).join(', ');
+            const message = `Based on data from ${sources || 'multiple sources'}, this topic is ${data.trend} with ${data.trendPercentage}% change. Current volume: ${Math.round(data.currentVolume)}`;
+            document.getElementById('predictionMessage').textContent = message;
+
+            // Update prediction result styling
+            predictionResultDiv.classList.remove('trend-rising', 'trend-falling');
+            if (data.trend === 'rising') {
+                predictionResultDiv.classList.add('trend-rising');
+            } else if (data.trend === 'falling') {
+                predictionResultDiv.classList.add('trend-falling');
+            }
+
+            // Combine historical and predicted data for chart
+            const chartData = {
+                labels: [],
+                volumes: [...data.historicalData, ...data.predictedData],
+                // Optional Prophet bounds (arrays of length predictedData.length)
+                predictedLower: data.predictedLowerBound || null,
+                predictedUpper: data.predictedUpperBound || null
+            };
+
+            console.log('📊 Chart Data Volumes:', chartData.volumes.length, 'points');
+            console.log('📜 Historical:', data.historicalData.length, 'Predicted:', data.predictedData.length);
+
+            // Generate labels with day names for historical data
+            const now = new Date();
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            for (let i = 0; i < data.historicalData.length; i++) {
+                const hoursAgo = data.historicalData.length - i - 1;
+                const date = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+                const dayName = daysOfWeek[date.getDay()];
+                const hour = date.getHours();
+                
+                // Show day name at midnight (0h) or every 24 hours
+                if (hour === 0 || i % 24 === 0) {
+                    chartData.labels.push(`${dayName} ${hour}h`);
+                } else {
+                    chartData.labels.push(`${hour}h`);
+                }
+            }
+            
+            // Generate labels for predicted data
+            for (let i = 1; i <= data.predictedData.length; i++) {
+                const futureDate = new Date(now.getTime() + i * 60 * 60 * 1000);
+                const dayName = daysOfWeek[futureDate.getDay()];
+                const hour = futureDate.getHours();
+                
+                // Show day name at midnight or every 6 hours for predictions
+                if (hour === 0 || i % 6 === 0) {
+                    chartData.labels.push(`${dayName} +${i}h`);
+                } else {
+                    chartData.labels.push(`+${i}h`);
+                }
+            }
+
+            renderTrendChart(chartData, data.historicalData.length);
+
+            // Display prediction visualization
+            const predictionVisData = {
+                hashtag: searchTopic,
+                current: data.currentVolume,
+                predicted: data.predictedData[23], // 24 hours ahead
+                confidence: data.confidence,
+                category: "Real-time Data",
+                trend: data.trend
+            };
+            displaySinglePredictionVisualization(predictionVisData);
+        }
+
+        // Fallback: Display Dummy Trend Data
+        function displayDummyTrendData(searchTopic, trendData, prediction) {
+            const predictionResultDiv = document.getElementById('predictionResult');
+            
+            const currentScore = trendData.volumes[HISTORICAL_HOURS - 1];
+            const predictedScore = trendData.volumes[TOTAL_HOURS - 1];
+
+            let trendDirection = 'neutral';
+            if (prediction.status.includes('RISING') || prediction.status.includes('SPIKE')) {
+                trendDirection = 'up';
+            } else if (prediction.status.includes('FALLING')) {
+                trendDirection = 'down';
+            }
+            
+            const predictionVisData = {
+                hashtag: searchTopic,
+                current: currentScore,
+                predicted: predictedScore,
+                confidence: Number.parseFloat(prediction.confidence),
+                category: "User Search",
+                trend: trendDirection
+            };
+            displaySinglePredictionVisualization(predictionVisData);
+
+            document.getElementById('predictedTopic').textContent = searchTopic;
+            document.getElementById('predictionStatus').textContent = prediction.status;
+            document.getElementById('predictionConfidence').textContent = prediction.confidence;
+            document.getElementById('predictionMessage').textContent = prediction.message;
+
+            predictionResultDiv.classList.remove('trend-rising', 'trend-falling');
+            const statusBadge = document.getElementById('predictionStatus');
+            statusBadge.classList.remove('bg-danger', 'bg-warning', 'bg-secondary', 'bg-success');
+
+            if (prediction.status.includes('RISING') || prediction.status.includes('SPIKE')) {
+                predictionResultDiv.classList.add('trend-rising');
+                statusBadge.classList.add('bg-success');
+            } else if (prediction.status.includes('FALLING')) {
+                predictionResultDiv.classList.add('trend-falling');
+                statusBadge.classList.add('bg-danger');
+            } else {
+                statusBadge.classList.add('bg-secondary');
+            }
+            predictionResultDiv.style.display = 'block';
+
+            renderTrendChart(trendData);
+        }
+
+        // Trend Data Generation
+        function generateDummyTrendData() {
+            const labels = [];
+            const volumes = [];
+            const lowerBounds = [];
+            const upperBounds = [];
+            const now = new Date();
+            let currentVolume = Math.floor(Math.random() * 500) + 500;
+            let volatility = 0.05;
+            const confidenceMultiplier = 0.1;
+
+            for (let i = TOTAL_HOURS - 1; i >= 0; i--) {
+                const hour = new Date(now.getTime() - (i - PREDICTED_HOURS) * 60 * 60 * 1000);
+                labels.push(hour.toLocaleTimeString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }));
+                let change = Math.floor(Math.random() * currentVolume * volatility) - (currentVolume * volatility / 2);
+                if (i < PREDICTED_HOURS) change += currentVolume * 0.05;
+                currentVolume += change;
+                currentVolume = Math.max(100, currentVolume);
+                volumes.push(currentVolume);
+                const margin = currentVolume * confidenceMultiplier * (i < PREDICTED_HOURS ? 1.5 : 1);
+                lowerBounds.push(currentVolume - margin);
+                upperBounds.push(currentVolume + margin);
+            }
+            return { labels, volumes, lowerBounds, upperBounds };
+        }
+
+        // Prediction Simulation
+        function simulatePrediction(topic, trendData) {
+            const historicalStartIndex = HISTORICAL_HOURS - 1;
+            const historicalVolume = trendData.volumes[historicalStartIndex];
+            const predictedVolume = trendData.volumes[TOTAL_HOURS - 1];
+            const change = predictedVolume - historicalVolume;
+
+            let status, message, confidence;
+            const percentChange = historicalVolume > 0 ? Math.abs(change) / historicalVolume * 100 : 0;
+            confidence = Math.min(99, 65 + percentChange * 0.5);
+
+            if (change > 200) {
+                status = "STRONG SPIKE";
+                message = `The model strongly predicts a major surge in volume for **${topic}** over the next 24 hours.`;
+                confidence = Math.min(99, confidence);
+            } else if (change > 50) {
+                status = "RISING";
+                message = `Steady growth is expected for **${topic}**. Maintain monitoring.`;
+                confidence = Math.min(95, confidence);
+            } else if (change > -50) {
+                status = "STABLE";
+                message = `**${topic}** volume should remain consistent. Low volatility expected.`;
+                confidence = Math.min(85, confidence);
+            } else {
+                status = "FALLING";
+                message = `A cooling trend is predicted for **${topic}**. Expect volume to decrease.`;
+                confidence = Math.min(90, confidence);
+            }
+
+            return { status, message, confidence: confidence.toFixed(1) };
+        }
+
+        // Chart Rendering
+        let trendChart;
+        function renderTrendChart(trendData, historicalLength = HISTORICAL_HOURS) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+
+            // Handle both old and new data formats
+            const labels = trendData.labels || generateLabels();
+            const volumes = trendData.volumes || [];
+            const histLength = historicalLength || HISTORICAL_HOURS;
+
+            // Generate confidence bands: prefer Prophet bounds for predicted segment if provided
+            let upperBounds = [];
+            let lowerBounds = [];
+
+            // If Prophet bounds are provided for predicted segment, use them for that tail
+            const hasProphetBounds = Array.isArray(trendData.predictedLower) && 
+                                      Array.isArray(trendData.predictedUpper) &&
+                                      trendData.predictedLower.length > 0;
+
+            if (hasProphetBounds) {
+                console.log('✅ Using Prophet confidence intervals (ML-based uncertainty bands)');
+                
+                // For historical part: narrow band (±5%) since this is observed data
+                for (let i = 0; i < histLength; i++) {
+                    lowerBounds.push(volumes[i] * 0.95);
+                    upperBounds.push(volumes[i] * 1.05);
+                }
+
+                // Append Prophet's actual prediction intervals for predicted hours
+                lowerBounds = lowerBounds.concat(trendData.predictedLower.map(v => Math.max(0, Number(v))));
+                upperBounds = upperBounds.concat(trendData.predictedUpper.map(v => Math.max(0, Number(v))));
+                
+                console.log(`   📊 Prophet bounds: ${trendData.predictedLower.length} hours`);
+            } else {
+                console.log('⚠️  No Prophet bounds available, using fallback ±15% band');
+                // Fallback: simple +/-15% band across entire series
+                upperBounds = volumes.map(val => val * 1.15);
+                lowerBounds = volumes.map(val => val * 0.85);
+            }
+
+            const segment = {
+                borderColor: (context) => context.dataIndex >= histLength - 1 ? 'red' : 'green',
+                borderDash: (context) => context.dataIndex >= histLength - 1 ? [5, 5] : undefined,
+            };
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Confidence Band Upper Bound',
+                            data: upperBounds,
+                            borderColor: 'transparent',
+                            backgroundColor: 'var(--ts-confidence-band)',
+                            pointRadius: 0,
+                            fill: '-1',
+                            segment: segment
+                        },
+                        {
+                            label: 'Topic Volume (Main Trend)',
+                            data: volumes,
+                            borderColor: 'var(--ts-primary-accent)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: (context) => context.dataIndex === histLength - 1 ? 5 : 0,
+                            pointBackgroundColor: 'var(--ts-primary-accent)',
+                            segment: segment
+                        },
+                        {
+                            label: 'Confidence Band Lower Bound',
+                            data: lowerBounds,
+                            borderColor: 'transparent',
+                            backgroundColor: 'transparent',
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#b0b0b0', font: { size: 12 } },
+                            title: { 
+                                display: true, 
+                                text: 'Hashtag Volume Score', 
+                                color: '#00bcd4',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: {
+                                color: '#b0b0b0',
+                                font: { size: 11 },
+                                callback: function(val, index) {
+                                    // Show labels at key points: start, end of historical, every 24h, and end
+                                    if (index === 0 || 
+                                        index === histLength - 1 || 
+                                        index === labels.length - 1 ||
+                                        index % 24 === 0) {
+                                        return this.getLabelForValue(val);
+                                    }
+                                    return null;
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            title: { 
+                                display: true, 
+                                text: 'Time (7 Days History + 24 Hours Prediction)', 
+                                color: '#00bcd4',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    const type = index < histLength ? 'HISTORICAL' : 'PREDICTED (Prophet ML)';
+                                    return `${labels[index]} (${type})`;
+                                },
+                                label: function(context) {
+                                    const datasetLabel = context.dataset.label;
+                                    const value = context.parsed.y.toFixed(2);
+                                    
+                                    // Show confidence interval info for predicted zone
+                                    if (context.datasetIndex === 0 && context.dataIndex >= histLength) {
+                                        return `Upper Bound (95% CI): ${value}`;
+                                    } else if (context.datasetIndex === 2 && context.dataIndex >= histLength) {
+                                        return `Lower Bound (95% CI): ${value}`;
+                                    } else if (context.datasetIndex === 1) {
+                                        return `Volume: ${value}`;
+                                    }
+                                    
+                                    return `${datasetLabel}: ${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Single Prediction Element Function
+        function createHashtagPredictionElement(data) {
+            let iconClass = '';
+            let iconName = 'trending_flat';
+            const maxScore = Math.max(data.current, data.predicted, 100);
+            const predictedScorePercentage = (data.predicted / maxScore) * 100;
+
+            if (data.trend === 'up') {
+                iconClass = 'trend-icon-up';
+                iconName = 'trending_up';
+            } else if (data.trend === 'down') {
+                iconClass = 'trend-icon-down';
+                iconName = 'trending_down';
+            } else {
+                iconClass = 'trend-icon-neutral';
+            }
+
+            const element = document.createElement('div');
+            element.className = 'hashtag-prediction-item mt-4 p-3';
+            element.style.borderRadius = '6px';
+            element.innerHTML = `
+                <span class="category-badge badge bg-secondary mb-2">${data.category}</span>
+                <div class="hashtag-prediction-title fs-5 fw-bold text-light mb-2">
+                    ${data.hashtag} - Prediction Score
+                    <i class="material-icons align-middle ms-2 ${iconClass}" style="font-size: 1.2rem; color: var(--ts-primary-accent);">${iconName}</i>
+                </div>
+                <div class="d-flex flex-row justify-content-between flex-wrap mt-2">
+                    <div class="me-3">
+                        <div class="score-label">Current Score (7 Day Avg.)</div>
+                        <div class="score-value fs-4">${data.current.toFixed(1)}</div>
+                    </div>
+                    <div class="me-3">
+                        <div class="score-label">Predicted Score (24h)</div>
+                        <div class="score-value fs-4">${data.predicted.toFixed(1)}</div>
+                    </div>
+                    <div>
+                        <div class="score-label">Confidence</div>
+                        <div class="score-value fs-4">${data.confidence}%</div>
+                    </div>
+                </div>
+                <div class="custom-progress mt-3" style="height: 10px; background-color: var(--ts-bg-surface); border-radius: 5px;">
+                    <div class="custom-progress-bar bg-info" role="progressbar"
+                         style="width: ${predictedScorePercentage}%; height: 100%; background-color: var(--ts-primary-accent) !important; border-radius: 5px;"
+                         aria-valuenow="${data.predicted}" aria-valuemin="0" aria-valuemax="${maxScore}">
+                    </div>
+                </div>
+            `;
+            return element;
+        }
+
+        // Display Single Prediction Visualization Function
+        function displaySinglePredictionVisualization(predictionData) {
+            const container = document.getElementById('searchedTopicPrediction');
+            container.innerHTML = '';
+            container.appendChild(createHashtagPredictionElement(predictionData));
+        }
+
+        // KPI Visualization Functions
+        function showKPIVisualization(kpiType) {
+            if (!currentTrendData) {
+                showToast('Please search for a topic first to view KPI visualizations', 'warning');
+                return;
+            }
+
+            // Validate data availability for specific KPI types
+            if (kpiType === 'volume' && (!currentTrendData.historicalData || !currentTrendData.predictedData)) {
+                showToast('Volume data not available for this topic', 'warning');
+                return;
+            }
+
+            if (kpiType === 'sources' && !currentTrendData.sources) {
+                showToast('Source data not available for this topic', 'warning');
+                console.warn('Missing sources data:', currentTrendData);
+            }
+
+            const modal = document.getElementById('kpiModal');
+            const modalTitle = document.getElementById('kpiModalTitle');
+            
+            // Set title based on KPI type
+            const titles = {
+                'volume': '📊 Volume Trend Analysis',
+                'trend': '📈 Trend Direction Over Time',
+                'accuracy': '🎯 Prediction Confidence Analysis',
+                'sources': '🔗 Data Sources Breakdown'
+            };
+            
+            modalTitle.textContent = titles[kpiType] || 'KPI Analysis';
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Render appropriate chart
+            setTimeout(() => {
+                renderKPIChart(kpiType);
+            }, 100);
+        }
+
+        function closeKPIModal() {
+            const modal = document.getElementById('kpiModal');
+            modal.style.display = 'none';
+            
+            // Destroy chart instance
+            if (kpiChartInstance) {
+                kpiChartInstance.destroy();
+                kpiChartInstance = null;
+            }
+        }
+
+        // Close modal when clicking outside
+        globalThis.onclick = function(event) {
+            const modal = document.getElementById('kpiModal');
+            if (event.target === modal) {
+                closeKPIModal();
+            }
+        };
+
+        function renderKPIChart(kpiType) {
+            const ctx = document.getElementById('kpiChart').getContext('2d');
+            
+            // Destroy existing chart
+            if (kpiChartInstance) {
+                kpiChartInstance.destroy();
+            }
+            
+            let chartConfig = null;
+            
+            // Debug logging for sources
+            if (kpiType === 'sources') {
+                console.log('📊 Sources Data Debug:', {
+                    currentTrendData: currentTrendData,
+                    sources: currentTrendData?.sources,
+                    activeSourceCount: currentTrendData?.activeSourceCount
+                });
+            }
+            
+            switch(kpiType) {
+                case 'volume':
+                    chartConfig = createVolumeChart();
+                    break;
+                case 'trend':
+                    chartConfig = createTrendChart();
+                    break;
+                case 'accuracy':
+                    chartConfig = createAccuracyChart();
+                    break;
+                case 'sources':
+                    chartConfig = createSourcesChart();
+                    break;
+            }
+            
+            if (chartConfig) {
+                kpiChartInstance = new Chart(ctx, chartConfig);
+            }
+        }
+
+        function createVolumeChart() {
+            const data = currentTrendData;
+            const allVolumes = [...data.historicalData, ...data.predictedData];
+            
+            return {
+                type: 'line',
+                data: {
+                    labels: allVolumes.map((_, i) => {
+                        if (i < data.historicalData.length) {
+                            return `H-${data.historicalData.length - i}h`;
+                        } else {
+                            return `+${i - data.historicalData.length + 1}h`;
+                        }
+                    }),
+                    datasets: [{
+                        label: 'Volume',
+                        data: allVolumes,
+                        borderColor: '#00bcd4',
+                        backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `Current Volume: ${data.currentVolume} | Change: ${data.trendPercentage}%`,
+                            color: '#f1f1f1',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#b0b0b0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#b0b0b0',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            };
+        }
+
+        function createTrendChart() {
+            const data = currentTrendData;
+            const trendValue = Number.parseFloat(data.trendPercentage);
+            
+            // Create hourly trend data
+            const hours = 24;
+            const trendData = Array.from({length: hours}, (_, i) => {
+                return data.currentVolume * (1 + (trendValue/100) * (i/hours));
+            });
+            
+            return {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: hours}, (_, i) => `+${i+1}h`),
+                    datasets: [{
+                        label: 'Projected Trend',
+                        data: trendData,
+                        backgroundColor: trendValue >= 0 ? 'rgba(72, 199, 116, 0.8)' : 'rgba(255, 56, 96, 0.8)',
+                        borderColor: trendValue >= 0 ? '#48c774' : '#ff3860',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: `Trend: ${data.trend.toUpperCase()} (${data.trendPercentage}%)`,
+                            color: '#f1f1f1',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#b0b0b0' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#b0b0b0',
+                                maxTicksLimit: 12
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            };
+        }
+
+        function createAccuracyChart() {
+            const data = currentTrendData;
+            const confidence = data.confidence;
+            
+            // Determine color based on confidence level
+            let confidenceColor = '#ff6b9d'; // Low confidence (pink)
+            if (confidence >= 80) {
+                confidenceColor = '#48c774'; // High confidence (green)
+            } else if (confidence >= 60) {
+                confidenceColor = '#ffdd57'; // Medium confidence (yellow)
+            }
+            
+            return {
+                type: 'doughnut',
+                data: {
+                    labels: ['Confidence', 'Uncertainty'],
+                    datasets: [{
+                        data: [confidence, 100 - confidence],
+                        backgroundColor: [
+                            confidenceColor,
+                            'rgba(255, 255, 255, 0.1)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f1f1f1' }
+                        },
+                        title: {
+                            display: true,
+                            text: `Prediction Confidence: ${confidence}% (${getConfidenceLabel(confidence)})`,
+                            color: '#f1f1f1',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            };
+        }
+
+        function createSourcesChart() {
+            const data = currentTrendData;
+            
+            if (!data || !data.sources) {
+                console.warn('No source data available for visualization');
+                return createEmptySourcesChart();
+            }
+            
+            const sources = data.sources;
+            const activeSourceNames = [];
+            const sourceVolumes = [];
+            const sourceColors = ['#00bcd4', '#48c774', '#ffdd57', '#ff6b9d'];
+            
+            for (const source of Object.values(sources)) {
+                if (source && source.source && source.volume !== undefined) {
+                    activeSourceNames.push(source.source);
+                    sourceVolumes.push(source.volume || 0);
+                }
+            }
+            
+            // If no valid sources found, show empty state
+            if (activeSourceNames.length === 0) {
+                console.warn('No active sources with valid data');
+                return createEmptySourcesChart();
+            }
+            
+            return {
+                type: 'pie',
+                data: {
+                    labels: activeSourceNames,
+                    datasets: [{
+                        data: sourceVolumes,
+                        backgroundColor: sourceColors.slice(0, activeSourceNames.length),
+                        borderWidth: 2,
+                        borderColor: '#211f42'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f1f1f1', font: { size: 14 } },
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: `Active Sources: ${activeSourceNames.length}/4`,
+                            color: '#f1f1f1',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            };
+        }
+
+        // Helper function to create empty sources chart when no data is available
+        function createEmptySourcesChart() {
+            return {
+                type: 'pie',
+                data: {
+                    labels: ['No Data Available'],
+                    datasets: [{
+                        data: [1],
+                        backgroundColor: ['rgba(255, 255, 255, 0.1)'],
+                        borderWidth: 2,
+                        borderColor: '#211f42'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f1f1f1', font: { size: 14 } },
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Active Sources: 0/4',
+                            color: '#f1f1f1',
+                            font: { size: 16 }
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    }
+                }
+            };
+        }
+
+    </script>
+</body>
+</html>
